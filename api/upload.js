@@ -1,6 +1,6 @@
 import { handleUpload } from "@vercel/blob/client";
 
-export default async function POST(req) {
+export default async function POST(req, res) {
   const body = req.body;
 
   try {
