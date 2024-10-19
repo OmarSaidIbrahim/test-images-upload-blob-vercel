@@ -1,58 +1,42 @@
-import { useState } from 'react';
-import { put } from '@vercel/blob';
+'use client';
 
-function FileUpload() {
-    const [file, setFile] = useState<File | null>(null);
-    const [blobUrl, setBlobUrl] = useState<string | null>(null);
-    const [uploading, setUploading] = useState(false);
+import { type PutBlobResult } from '@vercel/blob';
+import { upload } from '@vercel/blob/client';
+import { useState, useRef } from 'react';
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e?.target?.files?.[0]) {
-            setFile(e.target.files[0]);
-        }
-    };
-
-    const handleSubmit = async (event: { preventDefault: () => void; }) => {
-        event.preventDefault();
-        if (!file) return;
-
-        setUploading(true);
-
-        try {
-            const response = await fetch('/api/upload');
-            const { url, headers } = await response.json();
-
-            const res = await fetch(url, {
-                method: 'PUT',
-                headers: headers,
-                body: file,
-            });
-
-            if (res.ok) {
-                const blob = await put(file.name, file, { access: 'public' });
-                setBlobUrl(blob.url);
-            } else {
-                console.error('Upload failed');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-        } finally {
-            setUploading(false);
-        }
-    };
-
-
+export default function AvatarUploadPage() {
+    const inputFileRef = useRef<HTMLInputElement>(null);
+    const [blob, setBlob] = useState<PutBlobResult | null>(null);
     return (
-        <div>
-            <form onSubmit={handleSubmit}>
-                <input type="file" onChange={handleFileChange} accept="image/*" required />
-                <button type="submit" disabled={!file || uploading}>
-                    {uploading ? 'Uploading...' : 'Upload'}
-                </button>
+        <>
+            <h1>Upload Your Avatar</h1>
+
+            <form
+                onSubmit={async (event) => {
+                    event.preventDefault();
+
+                    if (!inputFileRef.current?.files) {
+                        throw new Error('No file selected');
+                    }
+
+                    const file = inputFileRef.current.files[0];
+
+                    const newBlob = await upload(file.name, file, {
+                        access: 'public',
+                        handleUploadUrl: '/api/upload',
+                    });
+
+                    setBlob(newBlob);
+                }}
+            >
+                <input name="file" ref={inputFileRef} type="file" required />
+                <button type="submit">Upload</button>
             </form>
-            {blobUrl && <p>Uploaded image URL: <a href={blobUrl}>{blobUrl}</a></p>}
-        </div>
+            {blob && (
+                <div>
+                    Blob url: <a href={blob.url}>{blob.url}</a>
+                </div>
+            )}
+        </>
     );
 }
-
-export default FileUpload;
