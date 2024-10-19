@@ -19,7 +19,7 @@ function FileUpload() {
         setUploading(true);
 
         try {
-            const response = await fetch('/api/upload-url');
+            const response = await fetch('/api/upload');
             const { url, headers } = await response.json();
 
             const res = await fetch(url, {
