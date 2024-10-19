@@ -1,13 +1,13 @@
 import { handleUpload } from "@vercel/blob/client";
 
-export default async function handler(req, res) {
-  const body = await req.json();
+export default async function POST(req) {
+  const body = req.body;
 
   try {
     const jsonResponse = await handleUpload({
       body,
-      req,
-      onBeforeGenerateToken: async (pathname /*, clientPayload */) => {
+      request: req,
+      onBeforeGenerateToken: async (pathname) => {
         // Generate a client token for the browser to upload the file
         // ⚠️ Authenticate and authorize users before generating the token.
         // Otherwise, you're allowing anonymous uploads.
@@ -22,9 +22,6 @@ export default async function handler(req, res) {
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
         // Get notified of client upload completion
-        // ⚠️ This will not work on `localhost` websites,
-        // Use ngrok or similar to get the full upload flow
-
         console.log("blob upload completed", blob, tokenPayload);
 
         try {
@@ -37,8 +34,8 @@ export default async function handler(req, res) {
       },
     });
 
-    return res.json(jsonResponse);
+    res.json(jsonResponse);
   } catch (error) {
-    console.log(error);
+    res.status(400).json({ error: error.message });
   }
 }
